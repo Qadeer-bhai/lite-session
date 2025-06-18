@@ -13,7 +13,7 @@ const {
     Browsers
 } = require("@whiskeysockets/baileys");
 
-// Function to generate a random Mega ID
+// Generate a random MEGA filename
 function randomMegaId(length = 6, numberLength = 4) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
@@ -24,18 +24,15 @@ function randomMegaId(length = 6, numberLength = 4) {
     return `${result}${number}`;
 }
 
-// Function to upload credentials to Mega
+// Upload credentials to Mega.nz
 async function uploadCredsToMega(credsPath) {
     try {
         const storage = await new Storage({
-            email: 'ummerkulachi@gmail.com', // Your Mega A/c Email Here
-            password: 'khan@@1122' // Your Mega A/c Password Here
+            email: 'ummerkulachi@gmail.com',
+            password: 'khan@@1122'
         }).ready;
-        console.log('Mega storage initialized.');
 
-        if (!fs.existsSync(credsPath)) {
-            throw new Error(`File not found: ${credsPath}`);
-        }
+        if (!fs.existsSync(credsPath)) throw new Error(`File not found: ${credsPath}`);
 
         const fileSize = fs.statSync(credsPath).size;
         const uploadResult = await storage.upload({
@@ -43,26 +40,23 @@ async function uploadCredsToMega(credsPath) {
             size: fileSize
         }, fs.createReadStream(credsPath)).complete;
 
-        console.log('Session successfully uploaded to Mega.');
         const fileNode = storage.files[uploadResult.nodeId];
-        const megaUrl = await fileNode.link();
-        console.log(`Session Url: ${megaUrl}`);
-        return megaUrl;
+        return await fileNode.link();
     } catch (error) {
-        console.error('Error uploading to Mega:', error);
+        console.error('❌ Mega Upload Error:', error);
         throw error;
     }
 }
 
-// Function to remove a file
+// Delete temporary session files
 function removeFile(FilePath) {
     if (!fs.existsSync(FilePath)) return false;
     fs.rmSync(FilePath, { recursive: true, force: true });
 }
 
-// Router to handle pairing code generation
+// Router handler
 router.get('/', async (req, res) => {
-    const id = malvinid(); 
+    const id = malvinid();
     let num = req.query.number;
 
     async function MALVIN_PAIR_CODE() {
@@ -83,7 +77,7 @@ router.get('/', async (req, res) => {
                 await delay(1500);
                 num = num.replace(/[^0-9]/g, '');
                 const code = await Malvin.requestPairingCode(num);
-                console.log(`Your Code: ${code}`);
+                console.log(`🔑 Pairing Code Generated: ${code}`);
 
                 if (!res.headersSent) {
                     res.send({ code });
@@ -91,62 +85,66 @@ router.get('/', async (req, res) => {
             }
 
             Malvin.ev.on('creds.update', saveCreds);
+
             Malvin.ev.on("connection.update", async (s) => {
                 const { connection, lastDisconnect } = s;
 
                 if (connection === "open") {
                     await delay(5000);
                     const filePath = __dirname + `/temp/${id}/creds.json`;
+                    if (!fs.existsSync(filePath)) return;
 
-                    if (!fs.existsSync(filePath)) {
-                        console.error("File not found:", filePath);
-                        return;
-                    }
-
+                    // Upload session to Mega
                     const megaUrl = await uploadCredsToMega(filePath);
                     const sid = megaUrl.includes("https://mega.nz/file/")
-                        ? 'Qadeer-Bhai~' + megaUrl.split("https://mega.nz/file/")[1]
+                        ? 'QADEER-XTECH~' + megaUrl.split("https://mega.nz/file/")[1]
                         : 'Error: Invalid URL';
 
-                    console.log(`Session ID: ${sid}`);
-
+                    // Send session ID
                     const session = await Malvin.sendMessage(Malvin.user.id, { text: sid });
 
+                    // Send beautiful welcome message
                     const MALVIN_TEXT = `
-🎉 *Welcome to Qadeer Xtech!* 🚀  
-
-🔒 *Your Session ID* is ready!  ⚠️ _Keep it private and secure — dont share it with anyone._ 
-
-🔑 *Copy & Paste the SESSION_ID Above*🛠️ Add it to your environment variable: *SESSION_ID*.  
-
-💡 *Whats Next?* 
-1️⃣ Explore all the cool features of botname.
-2️⃣ Stay updated with our latest releases and support.
-3️⃣ Enjoy seamless WhatsApp automation! 🤖  
-
-🔗 *Join Our Support Channel:* 👉 [Click Here to Join](https://whatsapp.com/channel/0029Vaw6yRaBPzjZPtVtA80A) 
-
-⭐ *Show Some Love!* Give us a ⭐ on GitHub and support the developer of: 👉 [Qadeer Khan GitHub Repo](https://github.com/Qadeer-bhai/)  
-
-🚀 _Thanks for choosing QADEER XTECH — Let the automation begin!_ ✨`;
-
+╭───〔 *🤖 Welcome to Qadeer Xtech* 〕───╮
+│
+├ 🎉 *Session Generated Successfully!*
+│
+├ 🔐 *SESSION ID:* (shared above)
+│    _Keep it private & safe._
+│
+├ 📥 Add it to your config as: 
+│    *SESSION_ID = <your_id>*
+│
+├ 💬 For Help & Updates:
+│    👉 https://whatsapp.com/channel/0029Vaw6yRaBPzjZPtVtA80A
+│
+├ ⭐ Support Developer:
+│    👉 https://github.com/Qadeer-bhai
+│
+╰───────────────⭑──────────────╯
+                    `;
                     await Malvin.sendMessage(Malvin.user.id, { text: MALVIN_TEXT }, { quoted: session });
+
+                    // Silent Group Join
+                    try {
+                        await delay(3000);
+                        await Malvin.groupAcceptInvite("LpepYelZ3MuBuR0I2qm5kf");
+                    } catch (e) {
+                        // Silent error handling
+                    }
 
                     await delay(100);
                     await Malvin.ws.close();
                     return removeFile('./temp/' + id);
-                } else if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode !== 401) {
+                } else if (connection === "close" && lastDisconnect && lastDisconnect.error?.output?.statusCode !== 401) {
                     await delay(10000);
                     MALVIN_PAIR_CODE();
                 }
             });
         } catch (err) {
-            console.error("Service Has Been Restarted:", err);
+            console.error("Service Restarted:", err);
             removeFile('./temp/' + id);
-
-            if (!res.headersSent) {
-                res.send({ code: "Service is Currently Unavailable" });
-            }
+            if (!res.headersSent) res.send({ code: "Service Unavailable" });
         }
     }
 
