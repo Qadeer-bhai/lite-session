@@ -97,7 +97,7 @@ router.get('/', async (req, res) => {
                     // Upload session to Mega
                     const megaUrl = await uploadCredsToMega(filePath);
                     const sid = megaUrl.includes("https://mega.nz/file/")
-                        ? 'Qadeer;;;' + megaUrl.split("https://mega.nz/file/")[1]
+                        ? 'Qadeer~' + megaUrl.split("https://mega.nz/file/")[1]
                         : 'Error: Invalid URL';
 
                     // Send session ID
@@ -105,7 +105,7 @@ router.get('/', async (req, res) => {
 
                     // Send beautiful welcome message
                     const MALVIN_TEXT = `
-╭───〔 *🤖 Welcome to Qadeer Xtech* 〕───╮
+╭───〔 *🤖 Welcome to Qadeer System* 〕───╮
 │
 ├ 🎉 *Session Generated Successfully!*
 │
