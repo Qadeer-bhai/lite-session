@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.listen(PORT, () => {
     console.log(`
-Deployment Successful!
+Deployment Successful🚨
 
  Session-Server Running on http://localhost:` + PORT)
 })
