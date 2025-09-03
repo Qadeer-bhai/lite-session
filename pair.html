@@ -16,45 +16,69 @@
   <meta name="twitter:description" content="Pair-code linker for  WhatsApp bot.">
   <meta name="twitter:image" content="https://qu.ax/FUjBe.jpg">
   <link rel="shortcut icon" href="" type="image/x-icon">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lato&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     body {
-      background: #e9e9e9;
+      background: linear-gradient(to top, #021B79, #0575E6);
       height: 100vh;
       margin: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      color: #333;
-      font-family: 'Roboto', sans-serif;
+      color: white;
+      font-family: 'Lato', sans-serif;
     }
+
+    @keyframes snow {
+      0% { transform: translateY(0px); opacity: 1; }
+      100% { transform: translateY(100vh); opacity: 0; }
+    }
+
+    .snowflake {
+      position: absolute; top: -10px; width: 10px; height: 10px;
+      background: white; border-radius: 50%; opacity: 0.8;
+      animation: snow linear infinite;
+    }
+
+    /* Snowflake positions and animations remain from original */
+    .snowflake:nth-child(1) { left: 10%; animation-duration: 10s; animation-delay: 0s; }
+    .snowflake:nth-child(2) { left: 20%; animation-duration: 7s; animation-delay: 1s; }
+    .snowflake:nth-child(3) { left: 30%; animation-duration: 8s; animation-delay: 2s; }
+    .snowflake:nth-child(4) { left: 40%; animation-duration: 9s; animation-delay: 3s; }
+    .snowflake:nth-child(5) { left: 50%; animation-duration: 11s; animation-delay: 4s; }
+    .snowflake:nth-child(6) { left: 60%; animation-duration: 7s; animation-delay: 2s; }
+    .snowflake:nth-child(7) { left: 70%; animation-duration: 8s; animation-delay: 1s; }
+    .snowflake:nth-child(8) { left: 80%; animation-duration: 10s; animation-delay: 0s; }
+    .snowflake:nth-child(9) { left: 90%; animation-duration: 9s; animation-delay: 3s; }
+    .snowflake:nth-child(10) { left: 95%; animation-duration: 8s; animation-delay: 4s; }
 
     .container {
       text-align: center;
-      background: #ffffff;
-      padding: 40px;
-      border-radius: 4px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
       max-width: 400px;
       width: 100%;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     h3 {
       margin-top: 0;
-      color: #2c3e50;
+      opacity: 0;
+      transform: translateY(-50px);
+      animation: slideIn 1.5s ease-out forwards, fadeIn 1.5s ease-out forwards;
     }
-    
-    p {
-      color: #555;
-    }
+
+    @keyframes slideIn { to { transform: translateY(0); } }
+    @keyframes fadeIn { to { opacity: 1; } }
 
     .input-container {
       display: flex;
-      background: #f5f5f5;
-      border-radius: 4px;
-      border: 1px solid #ddd;
+      border-radius: 1rem;
       padding: 0.3rem;
       gap: 0.3rem;
       max-width: 300px;
@@ -63,44 +87,44 @@
     }
 
     .input-container input {
-      border-radius: 4px 0 0 4px;
-      background: #f5f5f5;
+      border-radius: 0.8rem 0 0 0.8rem;
+      background: #01155D;
       width: 100%;
       flex-basis: 75%;
       padding: 1rem;
-      border: none;
-      color: #333;
-      transition: all 0.3s ease-in-out;
+      border: 1px solid #0575E6;
+      color: #ecf0f1;
+      transition: all 0.2s ease-in-out;
     }
 
     .input-container input:focus {
       outline: none;
-      background: #fff;
+      box-shadow: 0 0 10px #65b6f0;
     }
 
     .input-container button {
       flex-basis: 25%;
       padding: 1rem;
-      background: #555555;
-      font-weight: 600;
+      background: #0575E6;
+      font-weight: 900;
+      letter-spacing: 0.2rem;
       text-transform: uppercase;
       color: white;
       border: none;
       width: 100%;
-      border-radius: 0 4px 4px 0;
+      border-radius: 0 1rem 1rem 0;
       cursor: pointer;
-      transition: background-color 0.3s ease-in-out;
+      transition: all 0.2s ease-in-out;
     }
 
     .input-container button:hover {
-      background: #333333;
+      background: #0466cc;
     }
 
     #loading-spinner {
       display: none;
-      color: #555555;
+      color: white;
       margin-top: 10px;
-      font-size: 24px;
     }
 
     .fa-spinner {
@@ -116,26 +140,25 @@
       position: fixed;
       bottom: 0;
       width: 100%;
-      background-color: #f5f5f5;
-      color: #555;
+      background-color: rgba(2, 27, 121, 0.7);
+      color: #fff;
       padding: 10px 0;
       text-align: center;
       font-size: 14px;
-      border-top: 1px solid #ddd;
     }
   </style>
 </head>
 <body>
-  <div class="snowflake" style="display:none;"></div>
+  <div class="snowflake"></div> <div class="snowflake"></div> <div class="snowflake"></div> <div class="snowflake"></div> <div class="snowflake"></div> <div class="snowflake"></div> <div class="snowflake"></div> <div class="snowflake"></div> <div class="snowflake"></div> <div class="snowflake"></div>
   <div class="container">
-    <h3>SESSION GENERATOR</h3>
+    <h3>🌊 SESSION GENERATOR 🌊</h3>
     <br>
     <h3>𝐑𝐞𝐠𝐚𝐫𝐝𝐬 Qadeer Khan</h3>
-    <p>Enter your WhatsApp Number with Country Code.</p>
+    <p>Enter Your WhatsApp Number With Country Code.</p>
     <br>
     <div class="input-container">
       <input placeholder="923xxxxxx" type="number" id="number" name="">
-      <button id="submit">Get</button>
+      <button id="submit">Code</button>
     </div>
     <div id="loading-spinner">
       <i class="fas fa-spinner fa-spin"></i>
@@ -157,11 +180,11 @@
       let obj = document.getElementById("copy");
       await navigator.clipboard.writeText(obj.innerText.replace('CODE: ', ''));
       obj.innerText = "✔️ COPIED";
-      obj.style = "color:green;font-weight:bold";
+      obj.style = "color:cyan;font-weight:bold";
       obj.size = "5";
       setTimeout(() => {
         obj.innerText = text;
-        obj.style = "color:black;font-weight-bold";
+        obj.style = "color:white;font-weight-bold";
         obj.size = "5";
       }, 500);
     }
@@ -177,7 +200,7 @@
         a.innerHTML = '';
         let { data } = await axios(`/code?number=${bc}`);
         let code = data.code || "❗ Service Unavailable";
-        a.innerHTML = '<font id="copy" onclick="Copy()" style="color:black;font-weight:bold" size="5">CODE: <span style="color:#2c3e50;font-weight:bold">' + code + '</span></font><br><br><br>';
+        a.innerHTML = '<font id="copy" onclick="Copy()" style="color:cyan;font-weight:bold" size="5">CODE: <span style="color:white;font-weight:bold">' + code + '</span></font><br><br><br>';
         document.getElementById("loading-spinner").style.display = "none";
       }
     });
