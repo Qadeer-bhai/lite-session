@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qadeer Session Generator</title>
+  <style>
+    body {
+      background-image: url("https://wallpapercave.com/w/wp14551111.jpg");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      color: white;
+      font-family: sans-serif;
+    }
+    .container {
+      text-align: center;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 40px;
+      border-radius: 15px;
+    }
+    h3 {
+      margin-top: 0;
+      margin-bottom: 30px;
+      opacity: 0;
+      animation: fadeIn 2s forwards;
+      font-size: 2em;
+    }
+    .button {
+      width: 250px;
+      height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px;
+      padding: 0px 15px;
+      background-color: red;
+      border-radius: 10px;
+      border: none;
+      color: white;
+      position: relative;
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 1.1em;
+      transition-duration: .2s;
+      background: linear-gradient(0deg, #000, #272727);
+      text-decoration: none;
+    }
+    .button:before, .button:after {
+      content: '';
+      position: absolute;
+      left: -2px;
+      top: -2px;
+      border-radius: 10px;
+      background: linear-gradient(45deg, #ffffff, #00ff00, #000000, #000000, #ffffff);
+      background-size: 400%;
+      width: calc(100% + 4px);
+      height: calc(100% + 4px);
+      z-index: -1;
+      animation: steam 10s linear infinite;
+    }
+    @keyframes steam {
+      0% { background-position: 0 0; }
+      50% { background-position: 400% 0; }
+      100% { background-position: 0 0; }
+    }
+    .button:after {
+      filter: blur(50px);
+    }
+    .button span {
+      z-index: 1;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #222;
+      color: #fff;
+      padding: 10px 0;
+      text-align: center;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3>QADEER SESSION GENERATOR</h3>
+    <div>
+      <a href="/pair" class="button"><span>PAIRING CODE</span></a>
+      <br>
+      <a href="/qr" class="button"><span>QR CODE</span></a>
+    </div>
+  </div>
+  <footer>
+    QADEER XPRO &copy; <span id="currentYear"></span>
+  </footer>
+  <script>
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
