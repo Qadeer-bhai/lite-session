@@ -2,9 +2,9 @@ const { malvinid } = require('./id');
 const express = require('express');
 const fs = require('fs');
 const qrcode = require('qrcode');
+const axios = require('axios'); // Axios ko istemal karenge
 let router = express.Router();
 const pino = require("pino");
-const { Storage } = require("megajs");
 
 const {
     default: Malvin_Tech,
@@ -14,44 +14,21 @@ const {
     Browsers
 } = require("@whiskeysockets/baileys");
 
-// Function to generate a random Mega ID
-function randomMegaId(length = 6, numberLength = 4) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    const number = Math.floor(Math.random() * Math.pow(10, numberLength));
-    return `${result}${number}`;
-}
-
-// Function to upload credentials to Mega
-async function uploadCredsToMega(credsPath) {
+// Naya function session ko Nekobin par upload karne ke liye
+async function uploadToNekobin(filePath) {
     try {
-        const storage = await new Storage({
-            email: 'ummerkulachi@gmail.com', // Your Mega A/c Email Here
-            password: 'khan@@1122' // Your Mega A/c Password Here
-        }).ready;
-        console.log('Mega storage initialized.');
-
-        if (!fs.existsSync(credsPath)) {
-            throw new Error(`File not found: ${credsPath}`);
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        const response = await axios.post('https://nekobin.com/api/documents', fileContent, {
+            headers: { 'Content-Type': 'text/plain' }
+        });
+        if (response.data && response.data.result && response.data.result.key) {
+            return response.data.result.key; // Yeh key hi aapki ID hogi
+        } else {
+            throw new Error('Could not get a key from Nekobin response');
         }
-
-        const fileSize = fs.statSync(credsPath).size;
-        const uploadResult = await storage.upload({
-            name: `${randomMegaId()}.json`,
-            size: fileSize
-        }, fs.createReadStream(credsPath)).complete;
-
-        console.log('Session successfully uploaded to Mega.');
-        const fileNode = storage.files[uploadResult.nodeId];
-        const megaUrl = await fileNode.link();
-        console.log(`Session Url: ${megaUrl}`);
-        return megaUrl;
     } catch (error) {
-        console.error('Error uploading to Mega:', error);
-        throw error;
+        console.error('Error uploading to Nekobin:', error.message);
+        return null;
     }
 }
 
@@ -117,29 +94,34 @@ router.get('/', async (req, res) => {
                         return;
                     }
 
-                    const megaUrl = await uploadCredsToMega(filePath);
-                    const sid = megaUrl.includes("https://mega.nz/file/")
-                        ? 'Qadeer~' + megaUrl.split("https://mega.nz/file/")[1]
-                        : 'Error: Invalid URL';
+                    const pasteKey = await uploadToNekobin(filePath);
+                    if (!pasteKey) {
+                        console.error("Failed to upload to Nekobin, session cannot be sent.");
+                        await Malvin.sendMessage(Malvin.user.id, { text: "❗ Error: Could not generate Session ID. Please try again later." });
+                        return removeFile('./temp/' + id);
+                    }
 
+                    const sid = 'Qadeer~' + pasteKey;
                     console.log(`Session ID: ${sid}`);
 
                     const session = await Malvin.sendMessage(Malvin.user.id, { text: sid });
 
                     const MALVIN_TEXT = `
-🎉 *Welcome to Qadeer Brand System!* 🚀  
+🎉 *Welcome to Qadeer Brand System!* 🚀
 
-🔒 *Your Session ID* is ready!  ⚠️ _Keep it private and secure — dont share it with anyone._ 
+🔒 *Your Session ID is ready!* ⚠️ _Keep it private and secure — don’t share it with anyone._
 
-🔑 *Copy & Paste the SESSION_ID Above*🛠️ Add it to your environment variable: *SESSION_ID*.  
+🔑 *How to get your Session File:*
+1️⃣ Copy the key from your Session ID (the part after \`Qadeer~\`).
+2️⃣ Open this URL in your browser: \`https://nekobin.com/\`
+3️⃣ Paste your key at the end of the URL.
+    Example: \`https://nekobin.com/${pasteKey}\`
+4️⃣ Click the "Raw" button to see all the text.
+5️⃣ Copy all the text and paste it into a new file named \`creds.json\`.
 
-💡 *Whats Next?* 1️⃣ Explore all the cool features of botname.
-2️⃣ Stay updated with our latest releases and support.
-3️⃣ Enjoy seamless WhatsApp automation! 🤖  
+🔗 *Join Our Support Channel:* 👉 [Click Here to Join](https://whatsapp.com/channel/0029VajWxSZ96H4SyQLurV1H)
 
-🔗 *Join Our Support Channel:* 👉 [Click Here to Join](https://whatsapp.com/channel/0029Vaw6yRaBPzjZPtVtA80A) 
-
-⭐ *Show Some Love!* Give us a ⭐ on GitHub and support the developer of: 👉 [Qadeer Khan GitHub Repo](https://github.com/Qadeer-bhai/)  
+⭐ *Show Some Love!* Give us a ⭐ on GitHub: 👉 [Qadeer Khan GitHub Repo](https://github.com/Qadeer-bhai/)
 
 🚀 _Thanks for choosing QADEER SYSTEM — Let the automation begin!_ ✨`;
 
@@ -148,6 +130,7 @@ router.get('/', async (req, res) => {
                     await delay(100);
                     await Malvin.ws.close();
                     return removeFile('./temp/' + id);
+                    
                 } else if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode !== 401) {
                     await delay(10000);
                     MALVIN_QR_CODE();

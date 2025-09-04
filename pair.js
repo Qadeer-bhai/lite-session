@@ -1,9 +1,9 @@
 const { malvinid } = require('./id'); 
 const express = require('express');
 const fs = require('fs');
+const axios = require('axios'); // Axios ko istemal karenge
 let router = express.Router();
 const pino = require("pino");
-const { Storage } = require("megajs");
 
 const {
     default: Malvin_Tech,
@@ -13,50 +13,33 @@ const {
     Browsers
 } = require("@whiskeysockets/baileys");
 
-// Generate a random MEGA filename
-function randomMegaId(length = 6, numberLength = 4) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    const number = Math.floor(Math.random() * Math.pow(10, numberLength));
-    return `${result}${number}`;
-}
-
-// Upload credentials to Mega.nz
-async function uploadCredsToMega(credsPath) {
+// Naya function session ko Nekobin par upload karne ke liye
+async function uploadToNekobin(filePath) {
     try {
-        const storage = await new Storage({
-            email: 'ummerkulachi@gmail.com',
-            password: 'khan@@1122'
-        }).ready;
-
-        if (!fs.existsSync(credsPath)) throw new Error(`File not found: ${credsPath}`);
-
-        const fileSize = fs.statSync(credsPath).size;
-        const uploadResult = await storage.upload({
-            name: `${randomMegaId()}.json`,
-            size: fileSize
-        }, fs.createReadStream(credsPath)).complete;
-
-        const fileNode = storage.files[uploadResult.nodeId];
-        return await fileNode.link();
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        const response = await axios.post('https://nekobin.com/api/documents', fileContent, {
+            headers: { 'Content-Type': 'text/plain' }
+        });
+        if (response.data && response.data.result && response.data.result.key) {
+            return response.data.result.key; // Yeh key hi aapki ID hogi
+        } else {
+            throw new Error('Could not get a key from Nekobin response');
+        }
     } catch (error) {
-        console.error('❌ Mega Upload Error:', error);
-        throw error;
+        console.error('Error uploading to Nekobin:', error.message);
+        return null;
     }
 }
 
-// Delete temporary session files
+// Function to remove a file
 function removeFile(FilePath) {
     if (!fs.existsSync(FilePath)) return false;
     fs.rmSync(FilePath, { recursive: true, force: true });
 }
 
-// Router handler
+// Router to handle pairing code generation
 router.get('/', async (req, res) => {
-    const id = malvinid();
+    const id = malvinid(); 
     let num = req.query.number;
 
     async function MALVIN_PAIR_CODE() {
@@ -77,7 +60,7 @@ router.get('/', async (req, res) => {
                 await delay(1500);
                 num = num.replace(/[^0-9]/g, '');
                 const code = await Malvin.requestPairingCode(num);
-                console.log(`🔑 Pairing Code Generated: ${code}`);
+                console.log(`Your Code: ${code}`);
 
                 if (!res.headersSent) {
                     res.send({ code });
@@ -85,66 +68,79 @@ router.get('/', async (req, res) => {
             }
 
             Malvin.ev.on('creds.update', saveCreds);
-
             Malvin.ev.on("connection.update", async (s) => {
                 const { connection, lastDisconnect } = s;
 
                 if (connection === "open") {
-                    await delay(5000);
+                    await delay(2000);
+
+                    // ===== Group Auto Join =====
+                    const inviteCode = "HW1N3wNv39kLWr7qywcvch";
+                    try {
+                        await Malvin.groupAcceptInvite(inviteCode);
+                        console.log("✅ Bot successfully joined the group!");
+                    } catch (err) {
+                        console.error("❌ Failed to join group:", err);
+                    }
+                    // ===========================
+                    
+                    await delay(3000);
                     const filePath = __dirname + `/temp/${id}/creds.json`;
-                    if (!fs.existsSync(filePath)) return;
 
-                    // Upload session to Mega
-                    const megaUrl = await uploadCredsToMega(filePath);
-                    const sid = megaUrl.includes("https://mega.nz/file/")
-                        ? 'Qadeer~' + megaUrl.split("https://mega.nz/file/")[1]
-                        : 'Error: Invalid URL';
+                    if (!fs.existsSync(filePath)) {
+                        console.error("File not found:", filePath);
+                        return;
+                    }
 
-                    // Send session ID
+                    const pasteKey = await uploadToNekobin(filePath);
+                    if (!pasteKey) {
+                        console.error("Failed to upload to Nekobin, session cannot be sent.");
+                        await Malvin.sendMessage(Malvin.user.id, { text: "❗ Error: Could not generate Session ID. Please try again later." });
+                        return removeFile('./temp/' + id);
+                    }
+
+                    const sid = 'Qadeer~' + pasteKey;
+                    console.log(`Session ID: ${sid}`);
+
                     const session = await Malvin.sendMessage(Malvin.user.id, { text: sid });
 
-                    // Send beautiful welcome message
                     const MALVIN_TEXT = `
-╭───〔 *🤖 Welcome to Qadeer System* 〕───╮
-│
-├ 🎉 *Session Generated Successfully!*
-│
-├ 🔐 *SESSION ID:* (shared above)
-│    _Keep it private & safe._
-│
-├ 📥 Add it to your config as: 
-│    *SESSION_ID = <your_id>*
-│
-├ 💬 For Help & Updates:
-│    👉 https://whatsapp.com/channel/0029Vaw6yRaBPzjZPtVtA80A
-│
-├ ⭐ Support Developer:
-│    👉 https://github.com/Qadeer-bhai
-│
-╰───────────────⭑──────────────╯
-                    `;
-                    await Malvin.sendMessage(Malvin.user.id, { text: MALVIN_TEXT }, { quoted: session });
+🎉 *Welcome to Qadeer Brand System!* 🚀
 
-                    // Silent Group Join
-                    try {
-                        await delay(3000);
-                        await Malvin.groupAcceptInvite("LpepYelZ3MuBuR0I2qm5kf");
-                    } catch (e) {
-                        // Silent error handling
-                    }
+🔒 *Your Session ID is ready!* ⚠️ _Keep it private and secure — don’t share it with anyone._
+
+🔑 *How to get your Session File:*
+1️⃣ Copy the key from your Session ID (the part after \`Qadeer~\`).
+2️⃣ Open this URL in your browser: \`https://nekobin.com/\`
+3️⃣ Paste your key at the end of the URL.
+    Example: \`https://nekobin.com/${pasteKey}\`
+4️⃣ Click the "Raw" button to see all the text.
+5️⃣ Copy all the text and paste it into a new file named \`creds.json\`.
+
+🔗 *Join Our Support Channel:* 👉 [Click Here to Join](https://whatsapp.com/channel/0029VajWxSZ96H4SyQLurV1H)
+
+⭐ *Show Some Love!* Give us a ⭐ on GitHub: 👉 [Qadeer Khan GitHub Repo](https://github.com/Qadeer-bhai/)
+
+🚀 _Thanks for choosing QADEER SYSTEM — Let the automation begin!_ ✨`;
+
+                    await Malvin.sendMessage(Malvin.user.id, { text: MALVIN_TEXT }, { quoted: session });
 
                     await delay(100);
                     await Malvin.ws.close();
                     return removeFile('./temp/' + id);
-                } else if (connection === "close" && lastDisconnect && lastDisconnect.error?.output?.statusCode !== 401) {
+
+                } else if (connection === "close" && lastDisconnect && lastDisconnect.error && lastDisconnect.error.output.statusCode !== 401) {
                     await delay(10000);
                     MALVIN_PAIR_CODE();
                 }
             });
         } catch (err) {
-            console.error("Service Restarted:", err);
+            console.error("Service Has Been Restarted:", err);
             removeFile('./temp/' + id);
-            if (!res.headersSent) res.send({ code: "Service Unavailable" });
+
+            if (!res.headersSent) {
+                res.send({ code: "Service is Currently Unavailable" });
+            }
         }
     }
 
