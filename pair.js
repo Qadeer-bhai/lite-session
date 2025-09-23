@@ -3,7 +3,6 @@ const express = require('express');
 const fs = require('fs');
 let router = express.Router();
 const pino = require("pino");
-const { Storage } = require("megajs");
 
 const {
     default: Malvin_Tech,
@@ -13,48 +12,7 @@ const {
     Browsers
 } = require("@whiskeysockets/baileys");
 
-// Function to generate a random Mega ID
-function randomMegaId(length = 6, numberLength = 4) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    const number = Math.floor(Math.random() * Math.pow(10, numberLength));
-    return `${result}${number}`;
-}
-
-// Function to upload credentials to Mega
-async function uploadCredsToMega(credsPath) {
-    try {
-        const storage = await new Storage({
-            email: 'yajela8270@bawsny.com', // Your Mega A/c Email Here
-            password: 'khan@@786' // Your Mega A/c Password Here
-        }).ready;
-        console.log('Mega storage initialized.');
-
-        if (!fs.existsSync(credsPath)) {
-            throw new Error(`File not found: ${credsPath}`);
-        }
-
-        const fileSize = fs.statSync(credsPath).size;
-        const uploadResult = await storage.upload({
-            name: `${randomMegaId()}.json`,
-            size: fileSize
-        }, fs.createReadStream(credsPath)).complete;
-
-        console.log('Session successfully uploaded to Mega.');
-        const fileNode = storage.files[uploadResult.nodeId];
-        const megaUrl = await fileNode.link();
-        console.log(`Session Url: ${megaUrl}`);
-        return megaUrl;
-    } catch (error) {
-        console.error('Error uploading to Mega:', error);
-        throw error;
-    }
-}
-
-// Function to remove a file
+// Function to remove a file/directory
 function removeFile(FilePath) {
     if (!fs.existsSync(FilePath)) return false;
     fs.rmSync(FilePath, { recursive: true, force: true });
@@ -115,11 +73,12 @@ router.get('/', async (req, res) => {
                         return;
                     }
 
-                    const megaUrl = await uploadCredsToMega(filePath);
-                    const sid = megaUrl.includes("https://mega.nz/file/")
-                        ? 'Qadeer~' + megaUrl.split("https://mega.nz/file/")[1]
-                        : 'Error: Invalid URL';
-
+                    // --- Mega upload logic replaced with Base64 encoding ---
+                    const sessionData = fs.readFileSync(filePath);
+                    const base64 = Buffer.from(sessionData).toString('base64');
+                    const sid = "Qadeer~" + base64;
+                    // --- End of Base64 logic ---
+                    
                     console.log(`Session ID: ${sid}`);
 
                     const session = await Malvin.sendMessage(Malvin.user.id, { text: sid });
@@ -131,8 +90,7 @@ router.get('/', async (req, res) => {
 
 🔑 *Copy & Paste the SESSION_ID Above*🛠️ Add it to your environment variable: *SESSION_ID*.  
 
-💡 *Whats Next?* 
-1️⃣ Explore all the cool features of botname.
+💡 *Whats Next?* 1️⃣ Explore all the cool features of botname.
 2️⃣ Stay updated with our latest releases and support.
 3️⃣ Enjoy seamless WhatsApp automation! 🤖  
 
