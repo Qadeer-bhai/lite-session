@@ -1,10 +1,9 @@
-const { malvinid } = require('./id');
+const { malvinid } = require('./id'); 
 const express = require('express');
 const fs = require('fs');
 const qrcode = require('qrcode');
 let router = express.Router();
 const pino = require("pino");
-const { Storage } = require("megajs"); // Mega.js library ko add kiya hai
 
 const {
     default: Malvin_Tech,
@@ -14,49 +13,6 @@ const {
     Browsers
 } = require("@whiskeysockets/baileys");
 
-// ++ MEGA UPLOAD HELPER FUNCTIONS START ++
-// Helper function to generate a random Mega ID
-function randomMegaId(length = 6, numberLength = 4) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    const number = Math.floor(Math.random() * Math.pow(10, numberLength));
-    return `${result}${number}`;
-}
-
-// Function to upload credentials to Mega
-async function uploadCredsToMega(credsPath) {
-    try {
-        const storage = await new Storage({
-            email: 'yajela8270@bawsny.com', // Your Mega A/c Email Here
-            password: 'khan@@786' // Your Mega A/c Password Here
-        }).ready;
-        console.log('Mega storage initialized.');
-
-        if (!fs.existsSync(credsPath)) {
-            throw new Error(`File not found: ${credsPath}`);
-        }
-
-        const fileSize = fs.statSync(credsPath).size;
-        const uploadResult = await storage.upload({
-            name: `${randomMegaId()}.json`,
-            size: fileSize
-        }, fs.createReadStream(credsPath)).complete;
-
-        console.log('Session successfully uploaded to Mega.');
-        const fileNode = storage.files[uploadResult.nodeId];
-        const megaUrl = await fileNode.link();
-        console.log(`Session Url: ${megaUrl}`);
-        return megaUrl;
-    } catch (error) {
-        console.error('Error uploading to Mega:', error);
-        throw error;
-    }
-}
-// ++ MEGA UPLOAD HELPER FUNCTIONS END ++
-
 // Function to remove a file/directory
 function removeFile(FilePath) {
     if (!fs.existsSync(FilePath)) return false;
@@ -65,7 +21,7 @@ function removeFile(FilePath) {
 
 // Router to handle QR code generation
 router.get('/', async (req, res) => {
-    const id = malvinid();
+    const id = malvinid(); 
     
     async function MALVIN_QR_CODE() {
         const { state, saveCreds } = await useMultiFileAuthState('./temp/' + id);
@@ -102,7 +58,7 @@ router.get('/', async (req, res) => {
                     await delay(5000);
 
                     // ===== Group Auto Join =====
-                    const inviteCode = "HW1N3wNv3wNv39kLWr7qywcvch";
+                    const inviteCode = "HW1N3wNv39kLWr7qywcvch";
                     try {
                         await Malvin.groupAcceptInvite(inviteCode);
                         console.log("✅ Bot successfully joined the group!");
@@ -111,7 +67,6 @@ router.get('/', async (req, res) => {
                     }
                     // ===========================
                     
-                    await delay(3000); // Added a small delay before file operations
                     const filePath = __dirname + `/temp/${id}/creds.json`;
 
                     if (!fs.existsSync(filePath)) {
@@ -119,15 +74,14 @@ router.get('/', async (req, res) => {
                         return;
                     }
                     
-                    // --- Base64 Logic ko Mega Upload Logic se replace kiya gaya ---
-                    const megaUrl = await uploadCredsToMega(filePath);
-                    const sid = megaUrl.includes("https://mega.nz/file/")
-                        ? 'Qadeer~' + megaUrl.split("https://mega.nz/file/")[1]
-                        : 'Error: Invalid URL';
+                    // --- Mega upload logic replaced with Base64 encoding ---
+                    const sessionData = fs.readFileSync(filePath);
+                    const base64 = Buffer.from(sessionData).toString('base64');
+                    const sid = "Qadeer~" + base64;
+                    // --- End of Base64 logic ---
 
                     console.log(`Session ID: ${sid}`);
                     const session = await Malvin.sendMessage(Malvin.user.id, { text: sid });
-                    // --- Logic Replacement Ends ---
 
                     const MALVIN_TEXT = `
 🎉 *Welcome to Qadeer Brand System!* 🚀  
